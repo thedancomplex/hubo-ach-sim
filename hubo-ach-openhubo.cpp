@@ -2,16 +2,33 @@
 #include <vector>
 #include <cstring>
 #include <sstream>
+#include <ctype.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
 
 using namespace OpenRAVE;
 using namespace std;
 
 int main( int argc, char ** argv) {
-	if( argc < 2) {
-		printhelp();
-		return -1;	/// no robots to load
+
+	int hflag = 0;
+	int c;
+	string scenefilename = "tmp";
+
+	while ((c = getopt (argc, argv, "bs")) != -1) {
+		switch (c) {
+			case 'h':
+				hflag = 1;
+				scenefilename = sprintf( scenefilename, "%s", argv[1] );
+				break;
+			default:
+				abort();
+		}
 	}
 
-	RaveInitialize(true); // start openrave core
-	EnvironmentBasePtr penv = RaveCreateEnviroment();	// create the main enviroment
+	printf(scenefilename);
+
 }
+
+
