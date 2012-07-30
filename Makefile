@@ -1,7 +1,6 @@
 default: hubo-ach-openhubo
 
-hubo-main: hubo-ach-openhubo
-	gcc -o $@ $< -lach -lrt -l /usr/include/openrave-0.7
-
+hubo-ach-openhubo: hubo-ach-openhubo.cpp
+	g++ -I /usr/include/openrave-0.6/ -I ../hubo-ACH -o $@ $< -lopenrave -lach -lrt
 clean: 
 	rm hubo-ach-openhubo
