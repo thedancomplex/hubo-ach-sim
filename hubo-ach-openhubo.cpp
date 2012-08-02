@@ -135,10 +135,6 @@ int main(int argc, char ** argv)
 	}
 
 
-
-
-	int contactpoints = 0;
-	{
 	/* timing */
 	struct timespec t;
 	
@@ -151,6 +147,14 @@ int main(int argc, char ** argv)
 	/* read first set of data */
 	r = ach_get( &chan_num, H, sizeof(H), &fs, NULL, ACH_O_LAST );
 	assert( sizeof(H) == fs );
+
+
+	int contactpoints = 0;
+	bool runflag = true;
+	while(runflag) {
+	{
+
+
 
 	// lock the environment to prevent data from changing
 	EnvironmentMutex::scoped_lock lock(penv->GetMutex());
@@ -179,14 +183,22 @@ int main(int argc, char ** argv)
 	pbody->Enable(true);
 	//pbody->SetVisible(true);
 	CollisionReportPtr report(new CollisionReport());
-	bool runflag = true;
-	//while(runflag) {
+//	bool runflag = true;
+//	while(runflag) {
+	
 		/* Wait until next shot */
 		clock_nanosleep(0,TIMER_ABSTIME,&t, NULL);
 		
 		/* Get updated joint info here */
 		r = ach_get( &chan_num, H, sizeof(H), &fs, NULL, ACH_O_LAST );
 		assert( sizeof(H) == fs );
+
+
+		/* set all joints from ach */
+		for( int ii = 0; ii < (int)values.size() ; ii++ ) {
+			values[ii] = H->joint[ii].ref;
+		}
+
 
 
 //		values[RSY] = -1.0;
@@ -237,8 +249,9 @@ int main(int argc, char ** argv)
 		//pbody->SetVisible(true);
 		pbody->SimulationStep(0.01);
 		penv->StepSimulation(0.01);
+	
 	}
-	//}
+	}
 	pause();
     RaveDestroy(); // destroy
     return contactpoints;
