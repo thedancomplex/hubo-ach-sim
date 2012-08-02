@@ -52,12 +52,24 @@ int main(int argc, char ** argv)
 	string scenefilename = "openHubo/jaemiHubo.robot.xml";
 	RaveInitialize(true); // start openrave core
 	EnvironmentBasePtr penv = RaveCreateEnvironment(); // create the main environment
+	
+	int i = 1;
 	/* For Viewer */
-	RaveSetDebugLevel(Level_Debug);
-	boost::thread thviewer(boost::bind(SetViewer,penv,viewername));
+	if(argc > i) {
+		if(strcmp(argv[i], "-v") == 0) {
+			RaveSetDebugLevel(Level_Debug);
+			boost::thread thviewer(boost::bind(SetViewer,penv,viewername));
+		}
+		else {
+			printf("Loading Headless\n");
+		}
+	}
+	else {
+		printf("Loading Headless\n");	
+	}
+
 	vector<dReal> vsetvalues;
 	// parse the command line options
-	int i = 1;
     
 	// load the scene
 	if( !penv->Load(scenefilename) ) {
@@ -89,8 +101,8 @@ int main(int argc, char ** argv)
             values[i] = vsetvalues[i];
         }
 
-	values[RSY] = -1.0;
-	values[REB] = 1.0;
+//	values[RSY] = -1.0;
+//	values[REB] = 1.0;
         pbody->SetDOFValues(values,true);
 
         CollisionReportPtr report(new CollisionReport());
