@@ -1,82 +1,125 @@
-/** \example orloadviewer.cpp
-    \author Rosen Diankov
-
-    Shows how to load a robot into the openrave environment and start a viewer in a separate thread.
-
-    Usage:
-    \verbatim
-    orloadviewer [--num n] [--scene filename] viewername
-    \endverbatim
-
-    - \b --num - Number of environments/viewers to create simultaneously
-    - \b --scene - The filename of the scene to load.
-
-    Example:
-    \verbatim
-    ./orloadviewer --scene data/lab1.env.xml qtcoin
-    \endverbatim
-
-    <b>Full Example Code:</b>
- */
 #include <openrave-core.h>
 #include <vector>
 #include <cstring>
 #include <sstream>
+#include <ctype.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
 
 #include <boost/thread/thread.hpp>
 #include <boost/bind.hpp>
 
+
+#include <fcntl.h>
+#include <assert.h>
+#include <pthread.h>
+#include <stdbool.h>
+#include <math.h>
+#include <inttypes.h>
+#include "ach.h"
+
+#include "hubo.h"
+
+// ach message type
+typedef struct hubo huboOpen[1];
+
+// ach channels
+ach_channel_t chan_num;
+
+// Timing info
+#define NSEC_PER_SEC    1000000000
+
+
 using namespace OpenRAVE;
 using namespace std;
 
-void SetViewer(EnvironmentBasePtr penv, const string& viewername)
-{
-    ViewerBasePtr viewer = RaveCreateViewer(penv,viewername);
-    BOOST_ASSERT(!!viewer);
+static inline void tsnorm(struct timespec *ts){
 
-    // attach it to the environment:
-    penv->AddViewer(viewer);
-
-    // finally call the viewer's infinite loop (this is why a separate thread is needed)
-    bool showgui = true;
-    viewer->main(showgui);
+	while (ts->tv_nsec >= NSEC_PER_SEC) {
+		ts->tv_nsec -= NSEC_PER_SEC;
+		ts->tv_sec++;
+	}
 }
 
-int main(int argc, char ** argv)
-{
-    //int num = 1;
-    string scenefilename = "data/lab1.env.xml";
-    string viewername = "qtcoin";
+int main( int argc, char ** argv) {
 
-    // parse the command line options
-    int i = 1;
-    while(i < argc) {
-        if((strcmp(argv[i], "-h") == 0)||(strcmp(argv[i], "-?") == 0)||(strcmp(argv[i], "/?") == 0)||(strcmp(argv[i], "--help") == 0)||(strcmp(argv[i], "-help") == 0)) {
-            RAVELOG_INFO("orloadviewer [--num n] [--scene filename] viewername\n");
-            return 0;
-        }
-        //        else if( strcmp(argv[i], "--num") == 0 ) {
-        //            num = atoi(argv[i+1]);
-        //            i += 2;
-        //        }
-        else if( strcmp(argv[i], "--scene") == 0 ) {
-            scenefilename = argv[i+1];
-            i += 2;
-        }
-        else
-            break;
-    }
-    if( i < argc ) {
-        viewername = argv[i++];
-    }
+	printf("Start OpenHubo-Ach\n");
 
-    RaveInitialize(true); // start openrave core
-    EnvironmentBasePtr penv = RaveCreateEnvironment(); // create the main environment
-    RaveSetDebugLevel(Level_Debug);
+	int hflag = 0;
+	int c;
 
-    boost::thread thviewer(boost::bind(SetViewer,penv,viewername));
-    penv->Load(scenefilename); // load the scene
-    thviewer.join(); // wait for the viewer thread to exit
-    penv->Destroy(); // destroy
-    return 0;
+	struct timespec t;
+	int interval = 500000000; // 2hz (0.5 sec)
+	//int interval = 10000000; // 100 hz (0.01 sec)
+
+
+
+	huboOpen H;
+	// open ach channel
+	int r = ach_open(&chan_num, "hubo", NULL);
+	assert( ACH_OK == r );
+	size_t fs;
+	r = ach_get( &chan_num, H, sizeof(H), &fs, NULL, ACH_O_LAST );
+	assert( sizeof(H) == fs );
+//	assert( ACH_OK == r );
+/*
+	while ((c = getopt (argc, argv, "h")) != -1) {
+		switch (c) {
+			case 'h':
+				hflag = 1;
+				scenefilename = argv[1];
+				break;
+			default:
+				abort();
+		}
+	}
+
+*/
+
+	/* open openHubo */
+	EnvironmentBasePtr penv;
+	//string scenefilename = "openHubo/jaemiHubo.robot.xml";
+	string scenefilename = "openHubo/jaemiHubo.robot.xml";
+	RaveInitialize(true);
+	//string scenefilename = "data/lab1.env.xml";
+	//string viewername = "qtcoin";
+	try {
+	penv->Load(scenefilename);
+	printf("Loaded scene: \n");
+	}
+	catch(exception e) {
+		perror("load OpenRAVE ERR exiting");
+		return -1;
+	}
+//	vector<RobotBasePtr> vrobots;
+//	penv->GetRobots(vrobots);
+//	RobotBasePtr probot = vrobots.at(0);
+	
+//	ModuleBasePtr pbasemanip = RaveCreateModule(penv,"basemanipulation");
+
+
+	while(1) {
+
+
+                // wait until next shot
+                //clock_nanosleep(0,TIMER_ABSTIME,&t, NULL);
+		clock_nanosleep(0,TIMER_ABSTIME,&t, NULL);
+
+
+
+		// get new hubo profile
+		r = ach_get( &chan_num, H, sizeof(H), &fs, NULL, ACH_O_LAST );
+		assert( sizeof(H) == fs );
+
+		// do stuff here
+
+		t.tv_nsec+=interval;
+		tsnorm(&t);
+	}
+
+//	printf("%s",scenefilename);
+
 }
+
+
