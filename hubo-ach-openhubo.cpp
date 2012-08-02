@@ -24,30 +24,45 @@
 #include <vector>
 #include <cstring>
 #include <sstream>
+#include <boost/thread/thread.hpp>
+#include <boost/bind.hpp>
+
+#include "../hubo-ACH/hubo.h"
 
 using namespace OpenRAVE;
 using namespace std;
 
-void printhelp()
+void SetViewer(EnvironmentBasePtr penv, const string& viewername)
 {
-    RAVELOG_INFO("orcollision [--list] [--checker checker_name] [--joints #values [values]] body_model\n");
+    ViewerBasePtr viewer = RaveCreateViewer(penv,viewername);
+    BOOST_ASSERT(!!viewer);
+
+    // attach it to the environment:
+    penv->AddViewer(viewer);
+
+    // finally call the viewer's infinite loop (this is why a separate thread is needed)
+    bool showgui = true;
+    viewer->main(showgui);
 }
 
 int main(int argc, char ** argv)
 {
 
-    RaveInitialize(true); // start openrave core
-    EnvironmentBasePtr penv = RaveCreateEnvironment(); // create the main environment
-    vector<dReal> vsetvalues;
-
-    // parse the command line options
-    int i = 1;
+	string viewername = "qtcoin";
+	string scenefilename = "openHubo/jaemiHubo.robot.xml";
+	RaveInitialize(true); // start openrave core
+	EnvironmentBasePtr penv = RaveCreateEnvironment(); // create the main environment
+	/* For Viewer */
+	RaveSetDebugLevel(Level_Debug);
+	boost::thread thviewer(boost::bind(SetViewer,penv,viewername));
+	vector<dReal> vsetvalues;
+	// parse the command line options
+	int i = 1;
     
-
 	// load the scene
-    if( !penv->Load("openHubo/jaemiHubo.robot.xml") ) {
-        return 2;
-    }
+	if( !penv->Load(scenefilename) ) {
+		return 2;
+	}
 
 
 
@@ -73,6 +88,9 @@ int main(int argc, char ** argv)
         for(int i = 0; i < (int)vsetvalues.size() && i < (int)values.size(); ++i) {
             values[i] = vsetvalues[i];
         }
+
+	values[RSY] = -1.0;
+	values[REB] = 1.0;
         pbody->SetDOFValues(values,true);
 
         CollisionReportPtr report(new CollisionReport());
@@ -101,6 +119,8 @@ int main(int argc, char ** argv)
         vector<Transform> vlinktransforms;
         pbody->GetLinkTransformations(vlinktransforms);
     }
+
+	pause();
 
     RaveDestroy(); // destroy
     return contactpoints;
