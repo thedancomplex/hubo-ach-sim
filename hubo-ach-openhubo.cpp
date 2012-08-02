@@ -103,7 +103,7 @@ int main(int argc, char ** argv)
 	}
 	while(argc > i) {
 		if(strcmp(argv[i], "-g") == 0) {
-			RaveSetDebugLevel(Level_Debug);
+			//RaveSetDebugLevel(Level_Debug);
 			boost::thread thviewer(boost::bind(SetViewer,penv,viewername));
 		}
 		else {
@@ -138,33 +138,36 @@ int main(int argc, char ** argv)
 
 
 	int contactpoints = 0;
-
+	{
 	/* timing */
 	struct timespec t;
 	
 	/* hubo ACH Channel */
-//	huboOpen H;
-//	int r = ach_open(&chan_num, "hubo", NULL);
-//	size_t fs;
+	huboOpen H;
+	int r = ach_open(&chan_num, "hubo", NULL);
+	size_t fs;
 
 
 	/* read first set of data */
-//	r = ach_get( &chan_num, H, sizeof(H), &fs, NULL, ACH_O_LAST );
-//	assert( sizeof(H) == fs );
+	r = ach_get( &chan_num, H, sizeof(H), &fs, NULL, ACH_O_LAST );
+	assert( sizeof(H) == fs );
 
 	// lock the environment to prevent data from changing
 	EnvironmentMutex::scoped_lock lock(penv->GetMutex());
 
-	vector<KinBodyPtr> vbodies;
-	penv->GetBodies(vbodies);
+	//vector<KinBodyPtr> vbodies;
+	vector<RobotBasePtr> vbodies;
+	//penv->GetBodies(vbodies);
+	penv->GetRobots(vbodies);
 	// get the first body
 	if( vbodies.size() == 0 ) {
 		RAVELOG_ERROR("no bodies loaded\n");
 		return -3;
 	}
 
-	KinBodyPtr pbody = vbodies.at(0);
- 	vector<dReal> values;
+	//KinBodyPtr pbody = vbodies.at(0);
+ 	RobotBasePtr pbody = vbodies.at(0);
+	vector<dReal> values;
 	pbody->GetDOFValues(values);
 
 	// set new values
@@ -173,15 +176,17 @@ int main(int argc, char ** argv)
 	}
 
 	
+	pbody->Enable(true);
+	//pbody->SetVisible(true);
 	CollisionReportPtr report(new CollisionReport());
 	bool runflag = true;
-//	while(runflag) {
+	//while(runflag) {
 		/* Wait until next shot */
 		clock_nanosleep(0,TIMER_ABSTIME,&t, NULL);
-
+		
 		/* Get updated joint info here */
-//		r = ach_get( &chan_num, H, sizeof(H), &fs, NULL, ACH_O_LAST );
-//		assert( sizeof(H) == fs );
+		r = ach_get( &chan_num, H, sizeof(H), &fs, NULL, ACH_O_LAST );
+		assert( sizeof(H) == fs );
 
 
 //		values[RSY] = -1.0;
@@ -223,12 +228,17 @@ int main(int argc, char ** argv)
         	vector<Transform> vlinktransforms;
         	pbody->GetLinkTransformations(vlinktransforms);
 		//boost::this_thread::sleep(boost::posix_time::milliseconds(2000));
-		boost::this_thread::sleep(boost::posix_time::milliseconds(1));
+//		boost::this_thread::sleep(boost::posix_time::milliseconds(1));
 		t.tv_nsec+=interval;
 		tsnorm(&t);
 
-		runflag = false;
-//	}
+//		runflag = false;
+		//pbody->Enable(true);
+		//pbody->SetVisible(true);
+		pbody->SimulationStep(0.01);
+		penv->StepSimulation(0.01);
+	}
+	//}
 	pause();
     RaveDestroy(); // destroy
     return contactpoints;

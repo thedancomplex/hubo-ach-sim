@@ -1,1 +1,1 @@
-sudo ./hubo-ach-openhubo
+sudo ./hubo-ach-openhubo -g
