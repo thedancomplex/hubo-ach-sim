@@ -143,14 +143,14 @@ int main(int argc, char ** argv)
 	struct timespec t;
 	
 	/* hubo ACH Channel */
-	huboOpen H;
-	int r = ach_open(&chan_num, "hubo", NULL);
-	size_t fs;
+//	huboOpen H;
+//	int r = ach_open(&chan_num, "hubo", NULL);
+//	size_t fs;
 
 
 	/* read first set of data */
-	r = ach_get( &chan_num, H, sizeof(H), &fs, NULL, ACH_O_LAST );
-	assert( sizeof(H) == fs );
+//	r = ach_get( &chan_num, H, sizeof(H), &fs, NULL, ACH_O_LAST );
+//	assert( sizeof(H) == fs );
 
 	// lock the environment to prevent data from changing
 	EnvironmentMutex::scoped_lock lock(penv->GetMutex());
@@ -175,13 +175,13 @@ int main(int argc, char ** argv)
 	
 	CollisionReportPtr report(new CollisionReport());
 	bool runflag = true;
-	while(runflag) {
+//	while(runflag) {
 		/* Wait until next shot */
 		clock_nanosleep(0,TIMER_ABSTIME,&t, NULL);
 
 		/* Get updated joint info here */
-		r = ach_get( &chan_num, H, sizeof(H), &fs, NULL, ACH_O_LAST );
-		assert( sizeof(H) == fs );
+//		r = ach_get( &chan_num, H, sizeof(H), &fs, NULL, ACH_O_LAST );
+//		assert( sizeof(H) == fs );
 
 
 //		values[RSY] = -1.0;
@@ -228,7 +228,7 @@ int main(int argc, char ** argv)
 		tsnorm(&t);
 
 		runflag = false;
-	}
+//	}
 	pause();
     RaveDestroy(); // destroy
     return contactpoints;
