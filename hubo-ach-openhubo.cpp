@@ -85,9 +85,9 @@ void SetViewer(EnvironmentBasePtr penv, const string& viewername)
 int main(int argc, char ** argv)
 {
 
-	int interval = 1000000000; // 1hz (1.0 sec)
+	//int interval = 1000000000; // 1hz (1.0 sec)
 	//int interval = 500000000; // 2hz (0.5 sec)
-	//int interval = 10000000; // 100 hz (0.01 sec)
+	int interval = 10000000; // 100 hz (0.01 sec)
 	string viewername = "qtcoin";
 	string scenefilename = "openHubo/jaemiHubo.robot.xml";
 	RaveInitialize(true); // start openrave core
